@@ -157,6 +157,7 @@ procfs_get_process_link(
   ret = readlink(g_buffer, buffer, sizeof(buffer) - 1);
   if (ret != 0)
   {
+    buffer[ret] = '\0';
     buffer_ptr = strdup(buffer);
     log_debug("process %llu %s symlink points to \"%s\"", pid, filename, buffer_ptr);
   }
