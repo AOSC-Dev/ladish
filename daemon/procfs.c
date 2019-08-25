@@ -155,7 +155,7 @@ procfs_get_process_link(
 
   bzero(buffer, sizeof(buffer));
   ret = readlink(g_buffer, buffer, sizeof(buffer) - 1);
-  if (ret != 0)
+  if (ret > 0)
   {
     buffer[ret] = '\0';
     buffer_ptr = strdup(buffer);
@@ -163,7 +163,6 @@ procfs_get_process_link(
   }
   else
   {
-    ASSERT(ret == -1);
     buffer_ptr = NULL;
   }
 
