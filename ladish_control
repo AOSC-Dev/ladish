@@ -145,7 +145,7 @@ def dump_graph(obj):
     patchbay_iface = dbus.Interface(obj, patchbay_interface_name)
     graph = patchbay_iface.GetGraph(0)
     for client in graph[1]:
-        print '"%s"' % client[1]
+        print('"%s"' % client[1])
         for port in client[2]:
             port_flags = port[2]
             if (port_flags & 1) != 0:
@@ -163,22 +163,22 @@ def dump_graph(obj):
             else:
                 port_type = "unknown"
 
-            print '  "%s" [%s %s]' % (port[1], port_flags, port_type)
-    print
+            print('  "%s" [%s %s]' % (port[1], port_flags, port_type))
+    print()
     if len(graph[2]):
         if len(graph[2]) == 1:
-            print "1 connection:"
+            print("1 connection:")
         else:
-            print "%u connections:" % len(graph[2])
+            print("%u connections:" % len(graph[2]))
         for connection in graph[2]:
-            print '"%s":"%s" -> "%s":"%s"' % (connection[1], connection[3], connection[5], connection[7])
+            print('"%s":"%s" -> "%s":"%s"' % (connection[1], connection[3], connection[5], connection[7]))
     else:
-        print "0 connections."
+        print("0 connections.")
 
 def main():
     if len(sys.argv) == 1:
         argv0 = os.path.basename(sys.argv[0])
-        print("Usage: %s [command] [command] ..." % argv0)
+        print(("Usage: %s [command] [command] ..." % argv0))
         print("Commands:")
         print("    exit                      - exit ladish dbus service")
         print("    slist                     - list studios")
@@ -225,11 +225,11 @@ def main():
         print("");
         print(" * Add to studio jack_mixer instance named \"mixer\", at level 1, without terminal");
         print("");
-        print("    $ %s snewapp jack_mixer mixer 1" % argv0);
+        print(("    $ %s snewapp jack_mixer mixer 1" % argv0));
         print("");
         print(" * Add to room \"main\" fluidjack instance named \"fluid\", at level 0, with terminal");
         print("");
-        print("    $ %s rnewapp main \"fluidjack FluidR3.SF2\" fluid 0 term" % argv0);
+        print(("    $ %s rnewapp main \"fluidjack FluidR3.SF2\" fluid 0 term" % argv0));
         print("");
         sys.exit(0)
     
@@ -259,7 +259,7 @@ def main():
                 for studio in control_iface.GetStudioList():
                     name = studio[0]
                     mtime = studio[1]['Modification Time']
-                    print('"%s" last modified on %s' % (name, time.ctime(mtime)))
+                    print(('"%s" last modified on %s' % (name, time.ctime(mtime))))
             elif arg == 'alist':
                 print("--- app list")
                 for app in control_iface.GetApplicationList():
@@ -306,7 +306,7 @@ def main():
                 print("--- list room templates")
                 for studio in control_iface.GetRoomTemplateList():
                     name = studio[0]
-                    print('"%s"' % name)
+                    print(('"%s"' % name))
             elif arg == 'rtnew':
                 print("--- create new room template")
                 if index >= len(sys.argv):
@@ -334,7 +334,7 @@ def main():
 
                 if arg == 'sname':
                     print("--- studio get name")
-                    print("\"%s\"" % studio_iface.GetName())
+                    print(("\"%s\"" % studio_iface.GetName()))
                 elif arg == 'ssave':
                     print("--- studio save")
                     studio_iface.Save()
@@ -377,15 +377,15 @@ def main():
                         #print repr(room)
                         opath = room[0]
                         name = room[1]["name"]
-                        if room[1].has_key("template"):
+                        if "template" in room[1]:
                             template = str(room[1]["template"])
                         else:
                             template = None
 
                         if template:
-                            print('"%s" from template "%s" (%s)' % (name, template, opath))
+                            print(('"%s" from template "%s" (%s)' % (name, template, opath)))
                         else:
-                            print('"%s" (%s)' % (name, opath))
+                            print(('"%s" (%s)' % (name, opath)))
                 elif arg == 'sdelroom':
                     print("--- delete studio room")
                     if index >= len(sys.argv):
@@ -465,7 +465,7 @@ def main():
                         sys.exit()
                     rname = sys.argv[index]
                     index += 1
-                    print('--- dump room "' + rname + '" graph')
+                    print(('--- dump room "' + rname + '" graph'))
                     room_obj = get_room_obj_by_name(bus, studio_obj, rname)
                     dump_graph(room_obj)
                 elif arg == "sconnect":
@@ -477,7 +477,7 @@ def main():
                     c2 = sys.argv[index + 2]
                     p2 = sys.argv[index + 3]
                     index += 4
-                    print('--- connect studio port "' + c1 + '":"' + p1 + '" to "' + c2 + '":"' + p2 + '"')
+                    print(('--- connect studio port "' + c1 + '":"' + p1 + '" to "' + c2 + '":"' + p2 + '"'))
                     patchbay_iface = dbus.Interface(studio_obj, patchbay_interface_name)
                     patchbay_iface.ConnectPortsByName(c1, p1, c2, p2)
                 elif arg == "sdisconnect":
@@ -489,7 +489,7 @@ def main():
                     c2 = sys.argv[index + 2]
                     p2 = sys.argv[index + 3]
                     index += 4
-                    print('--- disconnect studio port "' + c2 + '":"' + p2 + '" from "' + c1 + '":"' + p1 + '"')
+                    print(('--- disconnect studio port "' + c2 + '":"' + p2 + '" from "' + c1 + '":"' + p1 + '"'))
                     patchbay_iface = dbus.Interface(studio_obj, patchbay_interface_name)
                     patchbay_iface.DisconnectPortsByName(c1, p1, c2, p2)
                 elif arg == "rconnect":
@@ -502,7 +502,7 @@ def main():
                     c2 = sys.argv[index + 3]
                     p2 = sys.argv[index + 4]
                     index += 5
-                    print('--- connect room "' + rname + '" port "' + c1 + '":"' + p1 + '" to "' + c2 + '":"' + p2 + '"')
+                    print(('--- connect room "' + rname + '" port "' + c1 + '":"' + p1 + '" to "' + c2 + '":"' + p2 + '"'))
                     room_obj = get_room_obj_by_name(bus, studio_iface, rname)
                     patchbay_iface = dbus.Interface(room_obj, patchbay_interface_name)
                     patchbay_iface.ConnectPortsByName(c1, p1, c2, p2)
@@ -516,14 +516,14 @@ def main():
                     c2 = sys.argv[index + 3]
                     p2 = sys.argv[index + 4]
                     index += 5
-                    print('--- disconnect room "' + rname + '" port "' + c2 + '":"' + p2 + '" from "' + c1 + '":"' + p1 + '"')
+                    print(('--- disconnect room "' + rname + '" port "' + c2 + '":"' + p2 + '" from "' + c1 + '":"' + p1 + '"'))
                     room_obj = get_room_obj_by_name(bus, studio_iface, rname)
                     patchbay_iface = dbus.Interface(room_obj, patchbay_interface_name)
                     patchbay_iface.DisconnectPortsByName(c1, p1, c2, p2)
                 else:
-                    print("Unknown command '%s'" % arg)
-        except dbus.DBusException, e:
-            print("DBus exception: %s" % str(e))
+                    print(("Unknown command '%s'" % arg))
+        except dbus.DBusException as e:
+            print(("DBus exception: %s" % str(e)))
 
 if __name__ == '__main__':
     main()

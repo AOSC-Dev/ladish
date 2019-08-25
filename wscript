@@ -1,18 +1,19 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
+# from Logs import pprint
 import os
-import Options
-import Utils
 import shutil
 import re
 import waflib
 from waflib.Scripting import Dist
+from waflib import Configure, Logs, Utils, Options
+from waflib.Logs import pprint
 
 parallel_debug = False
 
-APPNAME='ladish'
-VERSION='2-dev'
+APPNAME = 'ladish'
+VERSION = '2-dev'
 DBUS_NAME_BASE = 'org.ladish'
 RELEASE = False
 
@@ -20,19 +21,21 @@ RELEASE = False
 top = '.'
 out = 'build'
 
-from Logs import pprint
 
-def display_msg(conf, msg="", status = None, color = None):
+def display_msg(conf, msg="", status=None, color=None):
     if status:
         conf.msg(msg, status, color)
     else:
         pprint('NORMAL', msg)
 
-def display_raw_text(conf, text, color = 'NORMAL'):
-    pprint(color, text, sep = '')
 
-def display_line(conf, text, color = 'NORMAL'):
-    pprint(color, text, sep = os.linesep)
+def display_raw_text(conf, text, color='NORMAL'):
+    pprint(color, text, sep='')
+
+
+def display_line(conf, text, color='NORMAL'):
+    pprint(color, text, sep=os.linesep)
+
 
 def yesno(bool):
     if bool:
@@ -40,30 +43,44 @@ def yesno(bool):
     else:
         return "no"
 
+
 def options(opt):
     opt.load('compiler_c')
     opt.load('compiler_cxx')
-    opt.load('boost')
+    # opt.load('boost')
     opt.load('python')
-    opt.add_option('--enable-pkg-config-dbus-service-dir', action='store_true', default=False, help='force D-Bus service install dir to be one returned by pkg-config')
-    opt.add_option('--enable-liblash', action='store_true', default=False, help='Build LASH compatibility library')
-    opt.add_option('--enable-pylash', action='store_true', default=False, help='Build python bindings for LASH compatibility library')
-    opt.add_option('--debug', action='store_true', default=False, dest='debug', help="Build debuggable binaries")
-    opt.add_option('--doxygen', action='store_true', default=False, help='Enable build of doxygen documentation')
-    opt.add_option('--distnodeps', action='store_true', default=False, help="When creating distribution tarball, don't package git submodules")
-    opt.add_option('--distname', type='string', default=None, help="Name for the distribution tarball")
-    opt.add_option('--distsuffix', type='string', default="", help="String to append to the distribution tarball name")
-    opt.add_option('--tagdist', action='store_true', default=False, help='Create of git tag for distname')
-    opt.add_option('--libdir', type='string', default=None, help='Define lib dir')
+    opt.add_option('--enable-pkg-config-dbus-service-dir', action='store_true', default=False,
+                   help='force D-Bus service install dir to be one returned by pkg-config')
+    opt.add_option('--enable-liblash', action='store_true',
+                   default=False, help='Build LASH compatibility library')
+    opt.add_option('--enable-pylash', action='store_true', default=False,
+                   help='Build python bindings for LASH compatibility library')
+    opt.add_option('--debug', action='store_true', default=False,
+                   dest='debug', help="Build debuggable binaries")
+    opt.add_option('--doxygen', action='store_true', default=False,
+                   help='Enable build of doxygen documentation')
+    opt.add_option('--distnodeps', action='store_true', default=False,
+                   help="When creating distribution tarball, don't package git submodules")
+    opt.add_option('--distname', type='string', default=None,
+                   help="Name for the distribution tarball")
+    opt.add_option('--distsuffix', type='string', default="",
+                   help="String to append to the distribution tarball name")
+    opt.add_option('--tagdist', action='store_true',
+                   default=False, help='Create of git tag for distname')
+    opt.add_option('--libdir', type='string',
+                   default=None, help='Define lib dir')
     if parallel_debug:
         opt.load('parallel_debug')
+
 
 def add_cflag(conf, flag):
     conf.env.append_unique('CXXFLAGS', flag)
     conf.env.append_unique('CFLAGS', flag)
 
+
 def add_linkflag(conf, flag):
     conf.env.append_unique('LINKFLAGS', flag)
+
 
 def check_gcc_optimizations_enabled(flags):
     gcc_optimizations_enabled = False
@@ -71,25 +88,28 @@ def check_gcc_optimizations_enabled(flags):
         if len(flag) < 2 or flag[0] != '-' or flag[1] != 'O':
             continue
         if len(flag) == 2:
-            gcc_optimizations_enabled = True;
+            gcc_optimizations_enabled = True
         else:
-            gcc_optimizations_enabled = flag[2] != '0';
+            gcc_optimizations_enabled = flag[2] != '0'
     return gcc_optimizations_enabled
+
 
 def create_service_taskgen(bld, target, opath, binary):
     bld(
-        features     = 'subst', # the feature 'subst' overrides the source/target processing
-        source       = os.path.join('daemon', 'dbus.service.in'), # list of string or nodes
-        target       = target,  # list of strings or nodes
-        install_path = bld.env['DBUS_SERVICES_DIR'] + os.path.sep,
+        features='subst',  # the feature 'subst' overrides the source/target processing
+        # list of string or nodes
+        source=os.path.join('daemon', 'dbus.service.in'),
+        target=target,  # list of strings or nodes
+        install_path=bld.env['DBUS_SERVICES_DIR'] + os.path.sep,
         # variables to use in the substitution
-        dbus_object_path = opath,
-        daemon_bin_path  = os.path.join(bld.env['PREFIX'], 'bin', binary))
+        dbus_object_path=opath,
+        daemon_bin_path=os.path.join(bld.env['PREFIX'], 'bin', binary))
+
 
 def configure(conf):
     conf.load('compiler_c')
     conf.load('compiler_cxx')
-    conf.load('boost')
+    # conf.load('boost')
     conf.load('python')
     conf.load('intltool')
     if parallel_debug:
@@ -100,28 +120,30 @@ def configure(conf):
     conf.check_cc(msg="Checking for libdl", lib=['dl'], uselib_store='DL')
 
     # forkpty() is used by ladishd
-    conf.check_cc(msg="Checking for libutil", lib=['util'], uselib_store='UTIL')
+    conf.check_cc(msg="Checking for libutil", lib=[
+                  'util'], uselib_store='UTIL')
 
     conf.check_cfg(
-        package = 'jack',
-        mandatory = True,
-        errmsg = "not installed, see http://jackaudio.org/",
-        args = '--cflags --libs')
+        package='jack',
+        mandatory=True,
+        errmsg="not installed, see http://jackaudio.org/",
+        args='--cflags --libs')
 
     conf.check_cfg(
-        package = 'alsa',
-        mandatory = True,
-        errmsg = "not installed, see http://www.alsa-project.org/",
-        args = '--cflags')
+        package='alsa',
+        mandatory=True,
+        errmsg="not installed, see http://www.alsa-project.org/",
+        args='--cflags')
 
     conf.check_cfg(
-        package = 'dbus-1',
-        atleast_version = '1.0.0',
-        mandatory = True,
-        errmsg = "not installed, see http://dbus.freedesktop.org/",
-        args = '--cflags --libs')
+        package='dbus-1',
+        atleast_version='1.0.0',
+        mandatory=True,
+        errmsg="not installed, see http://dbus.freedesktop.org/",
+        args='--cflags --libs')
 
-    dbus_dir = conf.check_cfg(package='dbus-1', args='--variable=session_bus_services_dir', msg="Retrieving D-Bus services dir")
+    dbus_dir = conf.check_cfg(
+        package='dbus-1', args='--variable=session_bus_services_dir', msg="Retrieving D-Bus services dir")
     if not dbus_dir:
         return
 
@@ -131,66 +153,68 @@ def configure(conf):
     if Options.options.enable_pkg_config_dbus_service_dir:
         conf.env['DBUS_SERVICES_DIR'] = dbus_dir
     else:
-        conf.env['DBUS_SERVICES_DIR'] = os.path.join(os.path.normpath(conf.env['PREFIX']), 'share', 'dbus-1', 'services')
+        conf.env['DBUS_SERVICES_DIR'] = os.path.join(
+            os.path.normpath(conf.env['PREFIX']), 'share', 'dbus-1', 'services')
 
     if Options.options.libdir:
         conf.env['LIBDIR'] = Options.options.libdir
     else:
-        conf.env['LIBDIR'] = os.path.join(os.path.normpath(conf.env['PREFIX']), 'lib')
+        conf.env['LIBDIR'] = os.path.join(
+            os.path.normpath(conf.env['PREFIX']), 'lib')
 
     conf.env['BUILD_DOXYGEN_DOCS'] = Options.options.doxygen
 
     conf.check_cfg(
-        package = 'uuid',
-        mandatory = True,
-        errmsg = "not installed, see http://e2fsprogs.sourceforge.net/",
-        args = '--cflags --libs')
+        package='uuid',
+        mandatory=True,
+        errmsg="not installed, see http://e2fsprogs.sourceforge.net/",
+        args='--cflags --libs')
 
     conf.check(
         header_name='expat.h',
-        mandatory = True,
-        errmsg = "not installed, see http://expat.sourceforge.net/")
+        mandatory=True,
+        errmsg="not installed, see http://expat.sourceforge.net/")
 
     conf.env['LIB_EXPAT'] = ['expat']
 
     build_gui = True
 
     if build_gui and not conf.check_cfg(
-        package = 'glib-2.0',
-        mandatory = False,
-        errmsg = "not installed, see http://www.gtk.org/",
-        args = '--cflags --libs'):
+            package='glib-2.0',
+            mandatory=False,
+            errmsg="not installed, see http://www.gtk.org/",
+            args='--cflags --libs'):
         build_gui = False
 
     if build_gui and not conf.check_cfg(
-        package = 'dbus-glib-1',
-        mandatory = False,
-        errmsg = "not installed, see http://dbus.freedesktop.org/",
-        args = '--cflags --libs'):
+            package='dbus-glib-1',
+            mandatory=False,
+            errmsg="not installed, see http://dbus.freedesktop.org/",
+            args='--cflags --libs'):
         build_gui = False
 
     if build_gui and not conf.check_cfg(
-        package = 'gtk+-2.0',
-        mandatory = False,
-        atleast_version = '2.20.0',
-        errmsg = "not installed, see http://www.gtk.org/",
-        args = '--cflags --libs'):
+            package='gtk+-2.0',
+            mandatory=False,
+            atleast_version='2.20.0',
+            errmsg="not installed, see http://www.gtk.org/",
+            args='--cflags --libs'):
         build_gui = False
 
     if build_gui and not conf.check_cfg(
-        package = 'gtkmm-2.4',
-        mandatory = False,
-        atleast_version = '2.10.0',
-        errmsg = "not installed, see http://www.gtkmm.org",
-        args = '--cflags --libs'):
+            package='gtkmm-2.4',
+            mandatory=False,
+            atleast_version='2.10.0',
+            errmsg="not installed, see http://www.gtkmm.org",
+            args='--cflags --libs'):
         build_gui = False
 
     if build_gui and not conf.check_cfg(
-        package = 'libgnomecanvasmm-2.6',
-        mandatory = False,
-        atleast_version = '2.6.0',
-        errmsg = "not installed, see http://www.gtkmm.org",
-        args = '--cflags --libs'):
+            package='libgnomecanvasmm-2.6',
+            mandatory=False,
+            atleast_version='2.6.0',
+            errmsg="not installed, see http://www.gtkmm.org",
+            args='--cflags --libs'):
         build_gui = False
 
     #autowaf.check_pkg(conf, 'gtkmm-2.4', uselib_store='GLIBMM', atleast_version='2.10.0', mandatory=True)
@@ -202,13 +226,13 @@ def configure(conf):
         # We need the boost headers package (e.g. libboost-dev)
         # shared_ptr.hpp and weak_ptr.hpp
         build_gui = conf.check_boost(
-            mandatory = False,
+            mandatory=False,
             errmsg="not found, see http://boost.org/")
 
     conf.env['BUILD_GLADISH'] = build_gui
 
     conf.env['BUILD_LIBLASH'] = Options.options.enable_liblash
-    conf.env['BUILD_PYLASH'] =  Options.options.enable_pylash
+    conf.env['BUILD_PYLASH'] = Options.options.enable_pylash
     if conf.env['BUILD_PYLASH'] and not conf.env['BUILD_LIBLASH']:
         conf.fatal("pylash build was requested but liblash was not")
         conf.env['BUILD_PYLASH'] = False
@@ -222,8 +246,9 @@ def configure(conf):
     add_cflag(conf, '-Wall')
     # lash_wrap code is generated by swig and causes warnings
     if not conf.env['BUILD_PYLASH']:
-       add_cflag(conf, '-Wextra')
-       conf.env.append_unique('CXXFLAGS', '-Wno-unused-parameter') # the UNUSED() macro doesnt work for C++
+        add_cflag(conf, '-Wextra')
+        # the UNUSED() macro doesnt work for C++
+        conf.env.append_unique('CXXFLAGS', '-Wno-unused-parameter')
     if conf.env['BUILD_WERROR']:
         add_cflag(conf, '-Werror')
         # for pre gcc-4.4, enable optimizations so use of uninitialized variables gets detected
@@ -234,13 +259,16 @@ def configure(conf):
                 for n in conf.env['CC_VERSION']:
                     gcc_ver.append(int(n))
                 if gcc_ver[0] < 4 or gcc_ver[1] < 4:
-                    #print "optimize force enable is required"
+                    # print "optimize force enable is required"
                     if not check_gcc_optimizations_enabled(conf.env['CFLAGS']):
                         if Options.options.debug:
-                            print "C optimization must be forced in order to enable -Wuninitialized"
-                            print "However this will not be made because debug compilation is enabled"
+                            print(
+                                "C optimization must be forced in order to enable -Wuninitialized")
+                            print(
+                                "However this will not be made because debug compilation is enabled")
                         else:
-                            print "C optimization forced in order to enable -Wuninitialized"
+                            print(
+                                "C optimization forced in order to enable -Wuninitialized")
                             conf.env.append_unique('CFLAGS', "-O")
         except:
             pass
@@ -251,8 +279,10 @@ def configure(conf):
         add_cflag(conf, '-O0')
         add_linkflag(conf, '-g')
 
-    conf.env['DATA_DIR'] = os.path.normpath(os.path.join(conf.env['PREFIX'], 'share', APPNAME))
-    conf.env['LOCALE_DIR'] = os.path.normpath(os.path.join(conf.env['PREFIX'], 'share', 'locale'))
+    conf.env['DATA_DIR'] = os.path.normpath(
+        os.path.join(conf.env['PREFIX'], 'share', APPNAME))
+    conf.env['LOCALE_DIR'] = os.path.normpath(
+        os.path.join(conf.env['PREFIX'], 'share', 'locale'))
 
     # write some parts of the configure environment to the config.h file
     conf.define('DATA_DIR', conf.env['DATA_DIR'])
@@ -285,30 +315,39 @@ def configure(conf):
     display_msg(conf, 'Build gladish', yesno(conf.env['BUILD_GLADISH']))
     display_msg(conf, 'Build liblash', yesno(Options.options.enable_liblash))
     display_msg(conf, 'Build pylash', yesno(conf.env['BUILD_PYLASH']))
-    display_msg(conf, 'Treat warnings as errors', yesno(conf.env['BUILD_WERROR']))
+    display_msg(conf, 'Treat warnings as errors',
+                yesno(conf.env['BUILD_WERROR']))
     display_msg(conf, 'Debuggable binaries', yesno(conf.env['BUILD_DEBUG']))
-    display_msg(conf, 'Build doxygen documentation', yesno(conf.env['BUILD_DOXYGEN_DOCS']))
+    display_msg(conf, 'Build doxygen documentation',
+                yesno(conf.env['BUILD_DOXYGEN_DOCS']))
 
     if conf.env['DBUS_SERVICES_DIR'] != conf.env['DBUS_SERVICES_DIR_REAL']:
         display_msg(conf)
-        display_line(conf,     "WARNING: D-Bus session services directory as reported by pkg-config is", 'RED')
+        display_line(
+            conf,     "WARNING: D-Bus session services directory as reported by pkg-config is", 'RED')
         display_raw_text(conf, "WARNING:", 'RED')
         display_line(conf,      conf.env['DBUS_SERVICES_DIR_REAL'], 'CYAN')
-        display_line(conf,     'WARNING: but service file will be installed in', 'RED')
+        display_line(
+            conf,     'WARNING: but service file will be installed in', 'RED')
         display_raw_text(conf, "WARNING:", 'RED')
         display_line(conf,      conf.env['DBUS_SERVICES_DIR'], 'CYAN')
-        display_line(conf,     'WARNING: You may need to adjust your D-Bus configuration after installing ladish', 'RED')
-        display_line(conf,     'WARNING: You can override dbus service install directory', 'RED')
-        display_line(conf,     'WARNING: with --enable-pkg-config-dbus-service-dir option to this script', 'RED')
+        display_line(
+            conf,     'WARNING: You may need to adjust your D-Bus configuration after installing ladish', 'RED')
+        display_line(
+            conf,     'WARNING: You can override dbus service install directory', 'RED')
+        display_line(
+            conf,     'WARNING: with --enable-pkg-config-dbus-service-dir option to this script', 'RED')
 
     display_msg(conf, 'C compiler flags', repr(conf.env['CFLAGS']))
     display_msg(conf, 'C++ compiler flags', repr(conf.env['CXXFLAGS']))
 
     if not conf.env['BUILD_GLADISH']:
         display_msg(conf)
-        display_line(conf,     "WARNING: The GUI frontend will not built", 'RED')
+        display_line(
+            conf,     "WARNING: The GUI frontend will not built", 'RED')
 
     display_msg(conf)
+
 
 def git_ver(self):
     bld = self.generator.bld
@@ -326,7 +365,8 @@ def git_ver(self):
         return
 
     if bld.srcnode.find_node('.git'):
-        self.ver = bld.cmd_and_log("LANG= git rev-parse HEAD", quiet=waflib.Context.BOTH).splitlines()[0]
+        self.ver = bld.cmd_and_log(
+            "LANG= git rev-parse HEAD", quiet=waflib.Context.BOTH).splitlines()[0]
         if bld.cmd_and_log("LANG= git diff-index --name-only HEAD", quiet=waflib.Context.BOTH).splitlines():
             self.ver += "-dirty"
 
@@ -338,13 +378,16 @@ def git_ver(self):
     fi.write('#define GIT_VERSION "%s"\n' % self.ver)
     fi.close()
 
+
 def build(bld):
     if not bld.env['DATA_DIR']:
         raise "DATA_DIR is emtpy"
 
-    bld(rule=git_ver, target='version.h', update_outputs=True, always=True, ext_out=['.h'])
+    bld(rule=git_ver, target='version.h',
+        update_outputs=True, always=True, ext_out=['.h'])
 
-    daemon = bld.program(source = [], features = 'c cprogram', includes = [bld.path.get_bld()])
+    daemon = bld.program(source=[], features='c cprogram',
+                         includes=[bld.path.get_bld()])
     daemon.target = 'ladishd'
     daemon.uselib = 'DBUS-1 UUID EXPAT DL UTIL'
     daemon.ver_header = 'version.h'
@@ -401,7 +444,7 @@ def build(bld):
         'check_integrity.c',
         'lash_server.c',
         'jack_session.c',
-        ]:
+    ]:
         daemon.source.append(os.path.join("daemon", source))
 
     for source in [
@@ -412,7 +455,7 @@ def build(bld):
         "notify_proxy.c",
         "conf_proxy.c",
         "lash_client_proxy.c",
-        ]:
+    ]:
         daemon.source.append(os.path.join("proxies", source))
 
     for source in [
@@ -421,7 +464,7 @@ def build(bld):
         'object_path.c',
         'interface.c',
         'helpers.c',
-        ]:
+    ]:
         daemon.source.append(os.path.join("cdbus", source))
 
     for source in [
@@ -429,17 +472,19 @@ def build(bld):
         'time.c',
         'dirhelpers.c',
         'catdup.c',
-        ]:
+    ]:
         daemon.source.append(os.path.join("common", source))
 
     daemon.source.append(os.path.join("alsapid", "helper.c"))
 
     # process dbus.service.in -> ladish.service
-    create_service_taskgen(bld, DBUS_NAME_BASE + '.service', DBUS_NAME_BASE, daemon.target)
+    create_service_taskgen(bld, DBUS_NAME_BASE + '.service',
+                           DBUS_NAME_BASE, daemon.target)
 
     #####################################################
     # jmcore
-    jmcore = bld.program(source = [], features = 'c cprogram', includes = [bld.path.get_bld()])
+    jmcore = bld.program(source=[], features='c cprogram',
+                         includes=[bld.path.get_bld()])
     jmcore.target = 'jmcore'
     jmcore.uselib = 'DBUS-1 JACK'
     jmcore.defines = ['LOG_OUTPUT_STDOUT']
@@ -447,23 +492,25 @@ def build(bld):
 
     for source in [
         'log.c',
-        ]:
+    ]:
         jmcore.source.append(os.path.join("common", source))
 
     for source in [
-        #'signal.c',
+        # 'signal.c',
         'method.c',
         'object_path.c',
         'interface.c',
         'helpers.c',
-        ]:
+    ]:
         jmcore.source.append(os.path.join("cdbus", source))
 
-    create_service_taskgen(bld, DBUS_NAME_BASE + '.jmcore.service', DBUS_NAME_BASE + ".jmcore", jmcore.target)
+    create_service_taskgen(bld, DBUS_NAME_BASE + '.jmcore.service',
+                           DBUS_NAME_BASE + ".jmcore", jmcore.target)
 
     #####################################################
     # conf
-    ladiconfd = bld.program(source = [], features = 'c cprogram', includes = [bld.path.get_bld()])
+    ladiconfd = bld.program(
+        source=[], features='c cprogram', includes=[bld.path.get_bld()])
     ladiconfd.target = 'ladiconfd'
     ladiconfd.uselib = 'DBUS-1'
     ladiconfd.defines = ['LOG_OUTPUT_STDOUT']
@@ -473,7 +520,7 @@ def build(bld):
         'log.c',
         'dirhelpers.c',
         'catdup.c',
-        ]:
+    ]:
         ladiconfd.source.append(os.path.join("common", source))
 
     for source in [
@@ -482,26 +529,29 @@ def build(bld):
         'object_path.c',
         'interface.c',
         'helpers.c',
-        ]:
+    ]:
         ladiconfd.source.append(os.path.join("cdbus", source))
 
-    create_service_taskgen(bld, DBUS_NAME_BASE + '.conf.service', DBUS_NAME_BASE + ".conf", ladiconfd.target)
+    create_service_taskgen(bld, DBUS_NAME_BASE + '.conf.service',
+                           DBUS_NAME_BASE + ".conf", ladiconfd.target)
 
     #####################################################
     # alsapid
-    alsapid = bld.shlib(source = [], features = 'c cshlib', includes = [bld.path.get_bld()])
+    alsapid = bld.shlib(source=[], features='c cshlib',
+                        includes=[bld.path.get_bld()])
     alsapid.uselib = 'DL'
     alsapid.target = 'alsapid'
     for source in [
         'lib.c',
         'helper.c',
-        ]:
+    ]:
         alsapid.source.append(os.path.join("alsapid", source))
 
     #####################################################
     # liblash
     if bld.env['BUILD_LIBLASH']:
-        liblash = bld.shlib(source = [], features = 'c cshlib', includes = [bld.path.get_bld()])
+        liblash = bld.shlib(source=[], features='c cshlib',
+                            includes=[bld.path.get_bld()])
         liblash.uselib = 'DBUS-1'
         liblash.target = 'lash'
         liblash.vnum = "1.1.1"
@@ -513,7 +563,7 @@ def build(bld):
             'catdup.c',
             'file.c',
             'log.c',
-            ]:
+        ]:
             liblash.source.append(os.path.join("common", source))
 
         for source in [
@@ -521,27 +571,30 @@ def build(bld):
             'object_path.c',
             'interface.c',
             'helpers.c',
-            ]:
+        ]:
             liblash.source.append(os.path.join("cdbus", source))
 
-        bld.install_files('${PREFIX}/include/lash-1.0/lash', bld.path.ant_glob('lash_compat/liblash/lash/*.h'))
+        bld.install_files('${PREFIX}/include/lash-1.0/lash',
+                          bld.path.ant_glob('lash_compat/liblash/lash/*.h'))
 
         # process lash-1.0.pc.in -> lash-1.0.pc
         bld(
-            features     = 'subst', # the feature 'subst' overrides the source/target processing
-            source       = os.path.join("lash_compat", 'lash-1.0.pc.in'), # list of string or nodes
-            target       = 'lash-1.0.pc', # list of strings or nodes
-            install_path = '${LIBDIR}/pkgconfig/',
+            features='subst',  # the feature 'subst' overrides the source/target processing
+            # list of string or nodes
+            source=os.path.join("lash_compat", 'lash-1.0.pc.in'),
+            target='lash-1.0.pc',  # list of strings or nodes
+            install_path='${LIBDIR}/pkgconfig/',
             # variables to use in the substitution
-            prefix       = bld.env['PREFIX'],
-            exec_prefix  = bld.env['PREFIX'],
-            libdir       = bld.env['LIBDIR'],
-            includedir   = os.path.normpath(bld.env['PREFIX'] + '/include'))
+            prefix=bld.env['PREFIX'],
+            exec_prefix=bld.env['PREFIX'],
+            libdir=bld.env['LIBDIR'],
+            includedir=os.path.normpath(bld.env['PREFIX'] + '/include'))
 
     #####################################################
     # pylash
     if bld.env['BUILD_PYLASH']:
-        pylash = bld.shlib(source = [], features = 'c cshlib pyext', includes = ["lash_compat/liblash"])
+        pylash = bld.shlib(source=[], features='c cshlib pyext',
+                           includes=["lash_compat/liblash"])
         pylash.target = '_lash'
         pylash.use = 'lash'
         pylash.install_path = '${PYTHONDIR}'
@@ -549,15 +602,17 @@ def build(bld):
         for source in [
             'lash.c',
             'lash_wrap.c',
-            ]:
+        ]:
             pylash.source.append(os.path.join("lash_compat", "pylash", source))
 
-        bld.install_files('${PYTHONDIR}', os.path.join("lash_compat", "pylash", "lash.py"))
+        bld.install_files('${PYTHONDIR}', os.path.join(
+            "lash_compat", "pylash", "lash.py"))
 
     #####################################################
     # gladish
     if bld.env['BUILD_GLADISH']:
-        gladish = bld.program(source = [], features = 'c cxx cxxprogram', includes = [bld.path.get_bld()])
+        gladish = bld.program(source=[], features='c cxx cxxprogram', includes=[
+                              bld.path.get_bld()])
         gladish.target = 'gladish'
         gladish.defines = ['LOG_OUTPUT_STDOUT']
         gladish.uselib = 'DBUS-1 DBUS-GLIB-1 GTKMM-2.4 LIBGNOMECANVASMM-2.6 GTK+-2.0'
@@ -592,7 +647,7 @@ def build(bld):
             'action.c',
             'settings.c',
             'zoom.c',
-            ]:
+        ]:
             gladish.source.append(os.path.join("gui", source))
 
         for source in [
@@ -603,7 +658,7 @@ def build(bld):
             'Ellipse.cpp',
             'Canvas.cpp',
             'Connectable.cpp',
-            ]:
+        ]:
             gladish.source.append(os.path.join("gui", "flowcanvas", source))
 
         for source in [
@@ -615,35 +670,37 @@ def build(bld):
             'app_supervisor_proxy.c',
             "room_proxy.c",
             "conf_proxy.c",
-            ]:
+        ]:
             gladish.source.append(os.path.join("proxies", source))
 
         for source in [
             'method.c',
             'helpers.c',
-            ]:
+        ]:
             gladish.source.append(os.path.join("cdbus", source))
 
         for source in [
             'log.c',
             'catdup.c',
             'file.c',
-            ]:
+        ]:
             gladish.source.append(os.path.join("common", source))
 
         # GtkBuilder UI definitions (XML)
         bld.install_files('${DATA_DIR}', 'gui/gladish.ui')
 
-    bld.install_files('${PREFIX}/bin', 'ladish_control', chmod=0755)
+    bld.install_files('${PREFIX}/bin', 'ladish_control', chmod=0o755)
 
     # 'Desktop' file (menu entry, icon, etc)
-    bld.install_files('${PREFIX}/share/applications/', 'gui/gladish.desktop', chmod=0644)
+    bld.install_files('${PREFIX}/share/applications/',
+                      'gui/gladish.desktop', chmod=0o644)
 
     # Icons
     icon_sizes = ['16x16', '22x22', '24x24', '32x32', '48x48', '256x256']
     for icon_size in icon_sizes:
         bld.path.ant_glob('art/' + icon_size + '/apps/*.png')
-        bld.install_files('${PREFIX}/share/icons/hicolor/' + icon_size + '/apps/', 'art/' + icon_size + '/apps/gladish.png')
+        bld.install_files('${PREFIX}/share/icons/hicolor/' + icon_size +
+                          '/apps/', 'art/' + icon_size + '/apps/gladish.png')
 
     status_images = []
     for status in ["down", "unloaded", "started", "stopped", "warning", "error"]:
@@ -667,7 +724,9 @@ def build(bld):
             else:
                 pprint('CYAN', "doxygen documentation already built.")
 
-    bld(features='intltool_po', appname=APPNAME, podir='po', install_path="${LOCALE_DIR}")
+    bld(features='intltool_po', appname=APPNAME,
+        podir='po', install_path="${LOCALE_DIR}")
+
 
 def get_tags_dirs():
     source_root = os.path.dirname(Utils.g_module.root_path)
@@ -685,18 +744,22 @@ def get_tags_dirs():
     paths += " " + os.path.join(source_root, "lash_compat", "liblash", "lash")
     return paths
 
+
 def gtags(ctx):
     '''build tag files for GNU global'''
     cmd = "find %s -mindepth 1 -maxdepth 1 -name '*.[ch]' -print | gtags --statistics -f -" % get_tags_dirs()
     #print("Running: %s" % cmd)
     os.system(cmd)
 
+
 def etags(ctx):
     '''build TAGS file using etags'''
-    cmd = "find %s -mindepth 1 -maxdepth 1 -name '*.[ch]' -print | etags -" % get_tags_dirs()
+    cmd = "find %s -mindepth 1 -maxdepth 1 -name '*.[ch]' -print | etags -" % get_tags_dirs(
+    )
     #print("Running: %s" % cmd)
     os.system(cmd)
     os.system("stat -c '%y' TAGS")
+
 
 class ladish_dist(waflib.Scripting.Dist):
     cmd = 'dist'
@@ -708,12 +771,13 @@ class ladish_dist(waflib.Scripting.Dist):
             self.base_name = Options.options.distname
         else:
             try:
-                self.base_name = self.cmd_and_log("LANG= git describe --tags", quiet=waflib.Context.BOTH).splitlines()[0]
+                self.base_name = self.cmd_and_log(
+                    "LANG= git describe --tags", quiet=waflib.Context.BOTH).splitlines()[0]
             except:
                 self.base_name = APPNAME + '-' + VERSION
         self.base_name += Options.options.distsuffix
 
-        #print self.base_name
+        # print self.base_name
 
         if Options.options.distname and Options.options.tagdist:
             ret = self.exec_command("LANG= git tag " + self.base_name)
@@ -737,7 +801,7 @@ class ladish_dist(waflib.Scripting.Dist):
             excl += ' jack2'
             excl += ' a2jmidid'
 
-        #print repr(excl)
+        # print repr(excl)
         return excl
 
     def execute(self):
