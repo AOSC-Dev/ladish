@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # encoding: utf-8
 
 # from Logs import pprint
@@ -15,7 +15,7 @@ parallel_debug = False
 APPNAME = 'ladish'
 VERSION = '2-dev'
 DBUS_NAME_BASE = 'org.ladish'
-RELEASE = False
+RELEASE = True
 
 # these variables are mandatory ('/' are converted automatically)
 top = '.'
@@ -222,12 +222,12 @@ def configure(conf):
 
     #autowaf.check_pkg(conf, 'libgvc', uselib_store='AGRAPH', atleast_version='2.8', mandatory=False)
 
-    if build_gui:
-        # We need the boost headers package (e.g. libboost-dev)
-        # shared_ptr.hpp and weak_ptr.hpp
-        build_gui = conf.check_boost(
-            mandatory=False,
-            errmsg="not found, see http://boost.org/")
+    # if build_gui:
+    #     # We need the boost headers package (e.g. libboost-dev)
+    #     # shared_ptr.hpp and weak_ptr.hpp
+    #     build_gui = conf.check_boost(
+    #         mandatory=False,
+    #         errmsg="not found, see http://boost.org/")
 
     conf.env['BUILD_GLADISH'] = build_gui
 
