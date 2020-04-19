@@ -154,7 +154,7 @@ procfs_get_process_link(
   }
 
   bzero(buffer, sizeof(buffer));
-  ret = readlink(g_buffer, buffer, sizeof(buffer) - 1);
+  ret = readlink(g_buffer, buffer, BUFFER_SIZE);
   if (ret > 0)
   {
     buffer[ret] = '\0';
